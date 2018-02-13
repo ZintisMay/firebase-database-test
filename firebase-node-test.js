@@ -1,14 +1,26 @@
 
 const firebase = require("firebase");
-const publisherClass = require ('./publisherClass.js');
-const oldPublisherClass = require ('./oldPublisherClass.js');
-const PCH = require('./publisherClassHelpers.js')
+const PublisherClass = require ('./publisherClass.js');
+const OldPublisherClass = require ('./oldPublisherClass.js');
+const publisherClassHelpers = require('./publisherClassHelpers.js')
 
 //shortened version for now
-const compendiumImport = require("./shortCompendium.json");
+const compendiumImport = require("./compendium.json");
 var rawJSONcompendiumArray = compendiumImport["Compendium"];
 //converted to use the publisher class
 rawJSONcompendiumArray = convertArrayToPubClass(rawJSONcompendiumArray);
+// console.log("rawJSONcompendiumArray",rawJSONcompendiumArray);
+
+// Data type conversions///////////////////////
+function convertArrayToPubClass(arr){
+	var tempArray = [];
+	for(x=0;x<arr.length;x++){
+		let newPub = new PublisherClass;
+		newPub = publisherClassHelpers.convertOldToNew(arr[x]);
+		tempArray.push(newPub);
+	}
+	return tempArray;
+}
 
 //Helpers
 var getTheDate = require('./getDate.js');
@@ -31,11 +43,10 @@ const FBCOMP = ref.child("Compendium");
 localFB = {};
 
 // This function will look into the DB for an entry that matches the query
-localFB.search = function(field,value){
+localFB.search = function(value,field){
 	let returnArr = [];
 	let y = this.compendium;
 	for(x in y){
-		console.log(x)
 		if(y[x][field]==value){
 			returnArr.push(x)
 		}
@@ -45,123 +56,72 @@ localFB.search = function(field,value){
 
 
 
-// Test of Search Function
-// setTimeout(function(){console.log(localFB.search("Name","93 Made Games"));console.log(localFB.search("Name","Zintis"));},2000);
-
-
-
-////////////////////////////////////////////
-// This function populates the DB the first time, gives them arbitrary unique identifiers
-// pushAllCompendiumEntries(rawJSONcompendiumArray);
-function pushAllCompendiumEntries(arr){
-	if(Array.isArray(arr)  == true){
-		for(var x = 0;x < arr.length;x++){
-			// console.log(arr[x]);
-			ref.child("Compendium").push(arr[x]);
+///////////////////////////////////////////////
+// Populate DB Run once only///////////////////
+///////////////////////////////////////////////
+function pushAllCompendiumEntries(arrayOfEntries){
+	if(Array.isArray(arrayOfEntries)  == true){
+		for(var x = 0;x < arrayOfEntries.length;x++){
+			ref.child("Compendium").push(arrayOfEntries[x]);
 		}
 	}
 }
+// pushAllCompendiumEntries(rawJSONcompendiumArray);
 
-// Data type conversions///////////////////////
-function convertToPubClass(entry){
-	var newEntry = new publisherClass;
-	PCH.convertOldToNew(entry);
-	return newEntry;
-}
 
-function convertArrayToPubClass(arr){
-	var tempArray = [];
-	for(x=0;x<arr.length;x++){
-		tempArray.push(convertToPubClass(arr[x]));
-	}
-	return tempArray;
-}
 
 
 ///////////////////////////////////////////////
 // CRUD////////////////////////////////////////
 ///////////////////////////////////////////////
 
-// Create // This function takes an object that has the appropriately named properties and casts to publisherClass, then pushes to FB
+// Create ///////////////////////////////////////////////////////////
 
 function createCompendiumEntry(newEntry){
-	FBCOMP.push(PCH.convertAnonToPublisherClass(newEntry));
+	FBCOMP.push(publisherClassHelpers.convertAnonToPublisherClass(newEntry));
 }
-// createCompendiumEntry({"Name":"May","BGGPage":"http:www.boardgamegeek.com/02/zintisMay"});
 
-// Read///////////////
+
+// Read/////////////////////////////////////////////////////////
 
 FBCOMP.on('value',snapshot=>{
-	var snap = snapshot.val();
-	for(x in snap){
-		localFB[x] = snap[x];
-	}
-	// console.log("localFB",localFB);
 	localFB.compendium = snapshot.val();
-	// console.log("localFB",localFB);
 });
 
-// Update
+// Update///////////////////////////////////////////////////////
 
-// Delete
-function deleteCompendiumEntry(entryName){
+function updateCompendiumEntry(entryIdentifier, changeObject, optionalKey){
 
-	let target = localFB.search("Name", "May");
+	if(!changeObject || typeof changeObject != "object" || Object.keys(changeObject).length == 0){
+		console.log("error, no changes object passed")
+		return null;
+	}
+
+	let target=[];
+	if(typeof entryIdentifier == 'string' && typeof optionalKey == 'string'){
+		target = localFB.search(entryIdentifier,optionalKey);
+	}else if (typeof entryIdentifier == 'string'){
+		target.push(entryIdentifier);
+	}else{return null;}
+
+	console.log('target[0]',target[0]);
+	FBCOMP.child(target[0]).update(changeObject);
+}
+
+
+// Delete///////////////////////////////////////////////////////
+function deleteCompendiumEntry(entryIdentifier, optionalKey){
+
+	let target=[];
+	if(typeof entryIdentifier == 'string' && typeof optionalKey == 'string'){
+		target = localFB.search(entryIdentifier, optionalKey);
+	}else if (typeof entryIdentifier == 'string'){
+		target.push(entryIdentifier);
+	}else{return null;}
+
 	console.log('target[0]',target[0]);
 	FBCOMP.child(target[0]).remove();
 }
-setTimeout(function(){deleteCompendiumEntry("May");},2000)
-
-
-// ref.on('value',snap=>console.log(snap.val()));
-
-// var comp = ref.child('Compendium');
-
-// console.log(comp.val());
-
-// This function logs all the fields of all the entries of the DB
-// firebase.database().ref().on(
-// 	'value',
-// 	// snapshot=>console.log(Object.keys(snapshot.val()).forEach(function(key){console.log(snapshot.val()[key])}))
-// );
-
-
-function findPubByName(name){
-	var foundEntry;
-	// firebase.database().ref().on('value',snap=>snap.val().name == name ? foundGame = snap.val():foundGame = "Name Not Found");
-	firebase.database().ref().child().on('value',snap=>snap.val().name == name ? console.log(snap.val()):console.log("Name Not Found"));
-	console.log(foundEntry);
-	return foundEntry;
-}
-
-// var foundGame = findPubByName("Grail Games");
-// console.log(foundGame);
-// function addPubisher(pubObject){
-
-// }
-
-// function pubObject(){
-// 	let firstEntry = compendiumImport["Compendium"][0];
-// 	for(var pubKey in firstEntry){
-// 		console.log(pubKey);
-// 		this[pubKey] = typeof firstEntry[pubKey];
-// 	}
-
-// 	return this
-// }
-
-// pubObject();
-
-// console.log("=========pubObject==========",pubObject());
-
-// setTimeout(function(){
-// 	let pub = findPubByName("ABACUSSPIELE");
-// 	console.log(pub);
-// },1000)
-
-
-
-
 
 /////////////////////////Readline Code
 
@@ -186,4 +146,18 @@ function findPubByName(name){
 // 	});
 // })();
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Test of Search Function
+// setTimeout(function(){console.log(localFB.search("Name","93 Made Games"));console.log(localFB.search("Name","Zintis"));},2000);
+
+//New Entry Example
+// createCompendiumEntry({"Name":"Zintis"});
+
+// Update Entry
+setTimeout(function(){
+updateCompendiumEntry("Zintis",{"qwer":"try"},"Name")
+},2000)
+
+//Deletion Example:
+// setTimeout(function(){deleteCompendiumEntry("Good Games Publishing","Name");},1000)

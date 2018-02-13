@@ -10,25 +10,26 @@ function convertAnonToPublisherClass(o){
 	return newPub;
 }
 
-function convertOldToNew(oc){
+function convertOldToNew(oldPub){
+
 	let newPub = new publisherClass;
-      newPub.Website = stripHTTPAddress(oc["Publisher_Website"]) || "";
-      newPub.InterestedIn = oc["Interested_In"] || "";
-      newPub.Name = oc["Publisher_Name"] || "";
-      newPub.BGGPage = stripHTTPAddress(oc["BoardGameGeek_Page"]) || "";
-      
-      newPub.CategoriesArr = stringToArray(oc["Categories_of_Interest"]) || [];
-	  // console.log(newPub.CategoriesArr)
-      newPub.ContactMethodArr = stringToArray(oc["Method_of_Contact"]) || [];
-      newPub.ContactInfo = oc["Contact_Info"] || "";
-      newPub.SubmissionsOpen = oc["Accepting_Submissions"] || "";
-      newPub.CatalogSize = oc["Catalog_Size"] || "";
-      newPub.ProfileLastUpdate = oc["Profile_Updated_On"] || "";
-      newPub.Country = oc["Country"] || "";
-      newPub.RepresentativeGamesArr = stringWithLineBreaksToArray(oc["Representative_Games"]) || [];
-      // console.log(newPub.RepresentativeGamesArr);
-      newPub.KickstarterUseBool = oc["Planned_Use_of_Kickstarter"] || "";
-      return newPub;
+	newPub.Website = stripHTTPAddress(oldPub["Publisher_Website"]) || "";
+	newPub.InterestedIn = oldPub["Interested_In"] || "";
+	newPub.Name = oldPub["Publisher_Name"] || "";
+	newPub.BGGPage = stripHTTPAddress(oldPub["BoardGameGeek_Page"]) || "";
+	newPub.CategoriesArr = stringToArray(oldPub["Categories_of_Interest"]) || [];
+	newPub.ContactMethodArr = stringToArray(oldPub["Method_of_Contact"]) || [];
+	newPub.ContactInfo = oldPub["Contact_Info"] || "";
+	newPub.SubmissionsOpen = oldPub["Accepting_Submissions"] || "";
+	newPub.CatalogSize = oldPub["Catalog_Size"] || "";
+	newPub.ProfileLastUpdate = oldPub["Profile_Updated_On"] || "";
+	newPub.Country = oldPub["Country"] || "";
+	newPub.RepresentativeGamesArr = stringWithLineBreaksToArray(oldPub["Representative_Games"]) || [];
+	newPub.KickstarterUseBool = oldPub["Planned_Use_of_Kickstarter"] || "";
+	// console.log("oldPub",oldPub);
+	// console.log("newPub",newPub);
+	
+	return newPub;
 }
 
 function stripHTTPAddress(addy){
